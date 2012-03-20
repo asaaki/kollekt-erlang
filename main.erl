@@ -6,5 +6,7 @@ go() ->
   init(2323).
 
 init(Port) ->
-  BucketBroker = spawn(fun() -> bucket_broker:init() end),
-  spawn(fun() -> udp:init(Port, BucketBroker) end).
+  KollektStats = spawn(fun() -> statz:init() end),
+  BucketBroker = spawn(fun() -> bucket_broker:init(KollektStats) end),
+  spawn(fun() -> udp:init(Port, BucketBroker, KollektStats) end).
+  %spawn(fun() -> udp:init_multi(Port, BucketBroker, KollektStats) end).

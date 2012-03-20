@@ -1,2 +1,4 @@
 #!/bin/bash
-erlc main.erl udp.erl bucket_broker.erl bucket.erl
+for src in `ls *.erl`; do
+  erlc $src
+done

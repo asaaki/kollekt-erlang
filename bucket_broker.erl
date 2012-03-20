@@ -1,12 +1,12 @@
 -module(bucket_broker).
--export([init/0]).
+-export([init/1]).
 
-init() ->
+init(StatsPid) ->
   BucketPidStore = ets:new(bucket_pid_store,[set]),
   io:format("BucketStore server started with ets ~p~n",[BucketPidStore]),
-  loop(BucketPidStore).
+  loop(BucketPidStore, StatsPid).
 
-loop(BucketPidStore) ->
+loop(BucketPidStore, StatsPid) ->
   receive
 
     {lookup, BucketId, Data} ->
@@ -15,17 +15,29 @@ loop(BucketPidStore) ->
         [{_BucketId, BucketPid}] -> self() ! {update, BucketPid, Data};
         []                       -> self() ! {create, BucketId, Data}
       end,
-      loop(BucketPidStore);
+      StatsPid ! { buckets, count, ets:info(BucketPidStore, size)},
+      loop(BucketPidStore, StatsPid);
 
     {create, BucketId, Data} ->
-      BucketPid = bucket:new(BucketId),
+      BucketPid = bucket:new(BucketId, self()),
       ets:insert(BucketPidStore, {BucketId, BucketPid}),
       call_bucket(BucketPid, Data),
-      loop(BucketPidStore);
+      StatsPid ! { buckets, new, 1},
+      loop(BucketPidStore, StatsPid);
 
     {update, BucketPid, Data} ->
       call_bucket(BucketPid, Data),
-      loop(BucketPidStore)
+      loop(BucketPidStore, StatsPid);
+
+    {remove, BucketId} ->
+      ets:delete(BucketPidStore, BucketId),
+      StatsPid ! { buckets, count, ets:info(BucketPidStore, size)},
+      loop(BucketPidStore, StatsPid)
+
+  % update buckets count also if no new incoming
+  after 500 ->
+    StatsPid ! { buckets, count, ets:info(BucketPidStore, size)},
+    loop(BucketPidStore, StatsPid)
 
   end.
 
