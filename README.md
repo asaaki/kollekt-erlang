@@ -1,6 +1,6 @@
 # kollekt-erlang
 
-Yet another implementation of the kollekt service by [Paul Asmuth](https://github.com/paulasmuth).
+Yet another implementation of the kollekt service (origin by [Paul Asmuth](https://github.com/paulasmuth)).
 
 ## Usage
 
