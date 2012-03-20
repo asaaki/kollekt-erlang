@@ -4,6 +4,21 @@ Yet another implementation of the kollekt service by [Paul Asmuth](https://githu
 
 ## Usage
 
-erlc main.erl udp.erl bucket_brocker.erl bucket.erl
+### Prerequisites
 
-**in development, stay tuned …**
+Install Erlang (I build with R15B).
+
+### Compile
+
+```shell
+erlc main.erl udp.erl bucket_broker.erl bucket.erl
+```
+
+### Run
+
+```shell
+# starts service with udp port 2323 (testing mode)
+erl -s main go
+```
+
+**in development, everything can (and will) change, stay tuned …**
