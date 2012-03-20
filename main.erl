@@ -6,5 +6,5 @@ go() ->
   init(2323).
 
 init(Port) ->
-  BucketStore = spawn(fun() -> bucket_store:init() end),
-  spawn(fun() -> udp:init(Port, BucketStore) end).
+  BucketBroker = spawn(fun() -> bucket_broker:init() end),
+  spawn(fun() -> udp:init(Port, BucketBroker) end).
