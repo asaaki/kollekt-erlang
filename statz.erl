@@ -5,47 +5,68 @@ init() ->
   io:format("Statistic process started.~n"),
   StatsStore = ets:new(stats_store,[set]),
   SelfPid = self(),
-  InitList = [{buckets_count,0},{bucket_change,0},{packets_count,0},{payload_length,0}],
+  InitList = [
+    {buckets_count,      0},
+    {buckets_create,     0},
+    {buckets_remove,     0},
+    {buckets_update,     0},
+    {packets_count,      0},
+    {payload_length,     0}],
   spawn(fun() -> loop_output(SelfPid,InitList) end),
-  LastLoop = [0],
-  loop(StatsStore, LastLoop).
+  loop(StatsStore).
 
-loop(Store, LastLoop) ->
+loop(Store) ->
   receive
 
     { packets, count, Count } ->
       update_count(Store, packets_count, Count),
-      loop(Store, LastLoop);
+      loop(Store);
 
     { payload, length, Length } ->
       update_count(Store, payload_length, Length),
-      loop(Store, LastLoop);
+      loop(Store);
+
+    { buckets, create, Result } ->
+      update_count(Store, buckets_create, Result),
+      loop(Store);
+
+    { buckets, update, Result } ->
+      update_count(Store, buckets_update, Result),
+      loop(Store);
+
+    { buckets, remove, Result } ->
+      update_count(Store, buckets_remove, Result),
+      loop(Store);
 
     { buckets, count, Result } ->
       ets:insert(Store, { buckets_count, Result }),
-      loop(Store, LastLoop);
+      loop(Store);
 
     { From, calculate } ->
-      [BucketCycle|Rest] = LastLoop,
+      ResponseBucketsCount   = get_int_kv(Store, buckets_count),
+      ResponseBucketsCreate  = get_int_kv(Store, buckets_create),
+      ResponseBucketsRemove  = get_int_kv(Store, buckets_remove),
+      ResponseBucketsUpdate  = get_int_kv(Store, buckets_update),
+      ResponsePacketsCount   = get_int_kv(Store, packets_count),
+      ResponsePayloadLength  = get_int_kv(Store, payload_length),
 
-      ResponseBucketsCount  = get_int_kv(Store, buckets_count),
-      ResponsePacketsCount  = get_int_kv(Store, packets_count),
-      ResponsePayloadLength = get_int_kv(Store, payload_length),
-
-      {_, CurrentBuckets}   = ResponseBucketsCount,
-      BucketChange = CurrentBuckets - BucketCycle,
-
-      Response = [ResponseBucketsCount,{bucket_change, BucketChange},ResponsePacketsCount,ResponsePayloadLength],
+      Response = [
+        ResponseBucketsCount,
+        ResponseBucketsCreate,
+        ResponseBucketsRemove,
+        ResponseBucketsUpdate,
+        ResponsePacketsCount,
+        ResponsePayloadLength
+        ],
       From ! Response,
 
       % flush after calculate call
       ets:delete_all_objects(Store),
 
-      ThisLoop = [CurrentBuckets,Rest],
-      loop(Store, ThisLoop);
+      loop(Store);
 
     _Any ->
-      loop(Store, LastLoop)
+      loop(Store)
 
   end.
 
@@ -72,9 +93,15 @@ loop_output(LoopPid, LastResult) ->
 
   after 1000 ->
     LoopPid ! { self(), calculate },
-    %io:format("===> (~p) statz msg: ~p~n",[self(), LastResult]),
-    [{buckets_count,BCVal},{bucket_change, BDVal},{packets_count,PCVal},{payload_length,PLVal}] = LastResult,
-    OutList = [BCVal, BDVal, PCVal, (PLVal/(1024*1024))],
-    io:format("-> stats - ~9B buckets - ~9B buckets/s - ~9B packets/s - ~9.3f Mbit/s~n", OutList),
+    [
+      { buckets_count,  BCount   },
+      { buckets_create, BCreate  },
+      { buckets_remove, BRemove  },
+      { buckets_update, _BUpdate },
+      { packets_count,  PCount   },
+      { payload_length, PayLoad  }
+    ] = LastResult,
+    OutList = [BCount, BCreate, BRemove, (BCreate-BRemove), PCount, (PayLoad/(8*1024*1024)), (PayLoad/(1000*1000))],
+    io:format("=== | Buckets: ~9B total [~7B +/s] [~7B -/s] [~7B +/-] | ~9B packets/s | PTP: ~5.1f MiB/s (~5.1f Mbit/s) ===~n", OutList),
     loop_output(LoopPid, LastResult)
   end.

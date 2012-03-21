@@ -1,23 +1,22 @@
 -module(bucket).
--export([new/2, new/3]).
+-export([new/3, new/4]).
 
-new(BucketId, BrokerPid) ->
-  % 5 min timeout as default
+new(BucketId, BrokerPid, StatsPid) ->
   DefaultTimeout = 1*60*1000,
-  new(BucketId, BrokerPid, DefaultTimeout).
+  new(BucketId, BrokerPid, StatsPid, DefaultTimeout).
 
-new(BucketId, BrokerPid, Timeout) ->
-  spawn(fun() -> init(BucketId, BrokerPid, Timeout) end).
+new(BucketId, BrokerPid, StatsPid, Timeout) ->
+  spawn(fun() -> init(BucketId, BrokerPid, StatsPid, Timeout) end).
 
-init(BucketId, BrokerPid, Timeout) ->
+init(BucketId, BrokerPid, StatsPid, Timeout) ->
   BucketStore = [],
-  loop(BucketId, BrokerPid, BucketStore, Timeout).
+  loop(BucketId, BrokerPid, StatsPid, BucketStore, Timeout).
 
-loop(BucketId, BrokerPid, BucketStore, Timeout) ->
+loop(BucketId, BrokerPid, StatsPid, BucketStore, Timeout) ->
   receive
     {data, Data} ->
       NewBucketStore = [Data|BucketStore],
-      loop(BucketId, BrokerPid, NewBucketStore, Timeout);
+      loop(BucketId, BrokerPid, StatsPid, NewBucketStore, Timeout);
 
     _Any -> true
 

@@ -12,25 +12,29 @@ loop(BucketPidStore, StatsPid) ->
     {lookup, BucketId, Data} ->
       Lookup = ets:lookup(BucketPidStore, BucketId),
       case Lookup of
-        [{_BucketId, BucketPid}] -> self() ! {update, BucketPid, Data};
-        []                       -> self() ! {create, BucketId, Data}
+        [{_BucketId, BucketPid}] ->
+          self() ! {update, BucketPid, Data};
+        [] ->
+          self() ! {create, BucketId, Data}
       end,
       StatsPid ! { buckets, count, ets:info(BucketPidStore, size)},
       loop(BucketPidStore, StatsPid);
 
     {create, BucketId, Data} ->
-      BucketPid = bucket:new(BucketId, self()),
+      BucketPid = bucket:new(BucketId, self(), StatsPid),
       ets:insert(BucketPidStore, {BucketId, BucketPid}),
       call_bucket(BucketPid, Data),
-      StatsPid ! { buckets, new, 1},
+      StatsPid ! { buckets, create, 1},
       loop(BucketPidStore, StatsPid);
 
     {update, BucketPid, Data} ->
       call_bucket(BucketPid, Data),
+      StatsPid ! { buckets, update, 1},
       loop(BucketPidStore, StatsPid);
 
     {remove, BucketId} ->
       ets:delete(BucketPidStore, BucketId),
+      StatsPid ! { buckets, remove, 1},
       StatsPid ! { buckets, count, ets:info(BucketPidStore, size)},
       loop(BucketPidStore, StatsPid)
 
