@@ -1,0 +1,8 @@
+{release,
+ {"kollekt", "A"},
+ {erts, "5.9"},
+ [{kernel, "2.15"},
+  {stdlib, "1.18"},
+  {sasl, "2.2"},
+  {kollekt, "0.0.2"}]
+}.
