@@ -1,0 +1,15 @@
+{application, kollekt,
+ [
+  {description, "kollekt-erlang | key-value bucket collector"},
+  {vsn, "0.0.2"},
+  {registered, []},
+  %%% bucket,bucket_broker,kollekt_app,kollekt_sup,kueue,stats,udp
+  {applications, [
+                  kernel,
+                  stdlib,
+                  sasl,
+                  kollekt
+                 ]},
+  {mod, { kollekt_app, []}},
+  {env, []}
+ ]}.

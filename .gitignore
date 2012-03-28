@@ -1,1 +1,4 @@
-*.beam
+ebin/*
+erl_crash.dump
+*.boot
+*.script
