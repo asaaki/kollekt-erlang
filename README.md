@@ -11,7 +11,7 @@ Install Erlang (I build with R15B).
 ### Compile
 
 ```shell
-./recompile.sh
+./rebar compile
 ```
 
 ### Run
@@ -19,13 +19,13 @@ Install Erlang (I build with R15B).
 Demo service:
 
 ```shell
-./run.sh
+./run
 ```
 
 Test emitter:
 
 ```shell
-./run_emitter.sh
+./run_emitter
 ```
 
 **in development, everything can (and will) change, stay tuned …**
