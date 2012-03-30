@@ -130,7 +130,7 @@ output_loop() ->
     ] = CurrentResult,
     % OutList = [BucketsCreated, BucketsRemovedByTimeout, (BucketsCreated-BucketsRemovedByTimeout), Packets, (Payload/(8*1024*1024)), (Payload/(1000*1000))],
     io:format("=== | Buckets IN     ~7B/s | Packets           ~9B/s~n", [BucketsCreated,Packets]),
-    io:format("    | Buckets OUT    ~7B/s | PayloadThroughput ~9.1f MiB/s~n", [BucketsRemovedByTimeout,(Payload/(8*1024*1024))]),
-    io:format("    | Buckets IN/OUT ~7B/s |                   ~9.1f Mbit/s~n", [(BucketsCreated-BucketsRemovedByTimeout),(Payload/(1000*1000))]),
+    io:format("    | Buckets OUT    ~7B/s | PayloadThroughput ~11.3f MiB/s~n", [BucketsRemovedByTimeout,(Payload/(8*1024*1024))]),
+    io:format("    | Buckets IN/OUT ~7B/s |                   ~11.3f Mbit/s~n", [(BucketsCreated-BucketsRemovedByTimeout),(Payload/(1000*1000))]),
     output_loop()
   end.
