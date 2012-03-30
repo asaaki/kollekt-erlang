@@ -4,33 +4,62 @@
 % used_by: -
 
 -module(bucket).
--export([new/1, new/2]).
+-export([new/1, new/4]).
+
+-export([checkAge/2, currentTime/0]).
+
+-define(DEFAULT_TIMEOUT,    60).
+-define(DEFAULT_MAXLIFE,   120). % only in seconds!
+-define(DEFAULT_MAXITEMS, 1024).
 
 new(BucketId) ->
-  DefaultTimeout = 1*60*1000,
-  new(BucketId, DefaultTimeout).
+  new(BucketId, ?DEFAULT_TIMEOUT, (?DEFAULT_MAXLIFE*1000), ?DEFAULT_MAXITEMS).
 
-new(BucketId, Timeout) ->
-  spawn(fun() -> init(BucketId, Timeout) end).
+new(BucketId, Timeout, MaxLife, MaxItems) ->
+  spawn(fun() -> init(BucketId, Timeout, MaxLife, MaxItems) end).
 
-init(BucketId, Timeout) ->
+init(BucketId, Timeout, MaxLife, MaxItems) ->
   BucketStore = [],
-  loop(BucketId, BucketStore, Timeout).
+  {MegaSecs, Secs, _} = now(),
+  StartedAt = (MegaSecs * 1000000 + Secs),
+  loop(BucketId, BucketStore, StartedAt, Timeout, MaxLife, MaxItems).
 
-loop(BucketId, BucketStore, Timeout) ->
+loop(BucketId, BucketStore, StartedAt, Timeout, MaxLife, MaxItems) ->
   receive
     {data, Data} ->
       NewBucketStore = [Data|BucketStore],
       sucess,
-      loop(BucketId, NewBucketStore, Timeout);
+      OverAged = checkAge(StartedAt, MaxLife),
+      if
+        OverAged =:= true ->
+          bucket_broker:remove(BucketId, maxlife);
+        true ->
+          loop(BucketId, NewBucketStore, StartedAt, Timeout, MaxLife, MaxItems)
+      end;
 
     Any ->
       % debug
       io:format("Bucket :: No receiver matched! (with: ~p) [pid:~p]~n", [Any,self()]),
       oops,
-      loop(BucketId, BucketStore, Timeout)
+      loop(BucketId, BucketStore, StartedAt, Timeout, MaxLife, MaxItems)
 
   after Timeout ->
-    bucket_broker:remove(BucketId, timeout)
-    %, io:format("!!! bucket died: ~p~n    -> values: ~p ~n",[BucketId, lists:reverse(BucketStore)])
+    OverAged = checkAge(StartedAt, MaxLife),
+    Reason = if
+      OverAged =:= true ->
+        maxlife;
+      true ->
+        timeout
+    end,
+    bucket_broker:remove(BucketId, Reason)
   end.
+
+checkAge(StartedAt, MaxLife) ->
+  CurrentTime = currentTime(),
+  CurrentLife = CurrentTime - StartedAt,
+  CurrentLife >= MaxLife.
+
+currentTime() ->
+  {MegaSecs, Secs, _} = now(),
+  CurrentTime = (MegaSecs * 1000000 + Secs),
+  CurrentTime.

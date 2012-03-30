@@ -4,7 +4,6 @@
 % used_by: udp.erl
 
 -module(kueue).
-
 -behaviour(gen_server).
 
 -export([
@@ -12,6 +11,9 @@
   init/1, handle_call/3, handle_cast/2, handle_info/2,
   terminate/2, code_change/3
   ]).
+
+-define(DEFAULT_BUCKET_LIST_DELIMITER, <<"|||">>).
+-define(DEFAULT_BUCKET_DATA_DELIMITER, <<";">>).
 
 -record(state, {}).
 
@@ -27,17 +29,9 @@ init([]) ->
   {ok, #state{}}.
 
 handle_call({do, Bin}, _From, State) ->
-  [Bucket, Data] = binary:split(Bin, <<";">>),
-  Lookup = case bucket_broker:lookup(Bucket) of
-    [{_BucketId, BucketPid}] ->
-      bucket_broker:update(BucketPid, Data),
-      {ok, update};
-    [] ->
-      bucket_broker:create(Bucket, Data),
-      {ok, create}
-  end,
+  spawn(fun() -> processPayload(Bin) end),
   stats:add(payload, bit_size(Bin)),
-  Reply = {lookup, Lookup},
+  Reply = ok,
   {reply, Reply, State}.
 
 handle_cast(_Msg, State) ->
@@ -51,3 +45,23 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
   {ok, State}.
+
+% routines
+
+processPayload(Payload) ->
+  PayloadList = binary:split(Payload, ?DEFAULT_BUCKET_LIST_DELIMITER, [global]),
+  lists:foreach(
+    fun(I) ->
+      spawn(fun() -> processBucketData(I) end)
+    end,
+    PayloadList).
+
+processBucketData(Bin) ->
+  [Bucket, Data] = binary:split(Bin, ?DEFAULT_BUCKET_DATA_DELIMITER),
+  case bucket_broker:lookup(Bucket) of
+    [{_BucketId, BucketPid}] ->
+      bucket_broker:update(BucketPid, Data);
+    [] ->
+      bucket_broker:create(Bucket, Data)
+  end,
+  stats:incr({buckets, processed}).
