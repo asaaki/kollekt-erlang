@@ -13,7 +13,7 @@
 -define(DEFAULT_MAXITEMS, 1024).
 
 new(BucketId) ->
-  new(BucketId, ?DEFAULT_TIMEOUT, (?DEFAULT_MAXLIFE*1000), ?DEFAULT_MAXITEMS).
+  new(BucketId, (?DEFAULT_TIMEOUT*1000), ?DEFAULT_MAXLIFE, ?DEFAULT_MAXITEMS).
 
 new(BucketId, Timeout, MaxLife, MaxItems) ->
   spawn(fun() -> init(BucketId, Timeout, MaxLife, MaxItems) end).
