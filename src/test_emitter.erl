@@ -25,8 +25,8 @@ loop(Socket, Host, Port) ->
 
   {A1,A2,A3} = now(),
   random:seed(A1, A2, A3),
-  SessionSize = 1000000, % max amount of different sessions
-  ValueSize   = 100,     % max amount of different values
+  SessionSize = 100000, % max amount of different sessions
+  ValueSize   = 10000,  % max amount of different values
   Session = crypto:md5(list_to_binary(integer_to_list(random:uniform(SessionSize)+1))),
   Value   = crypto:md5(list_to_binary(integer_to_list(random:uniform(ValueSize)+1))),
 

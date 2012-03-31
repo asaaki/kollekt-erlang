@@ -61,7 +61,8 @@ handle_call(result, _From, Table) ->
     {buckets, created},
     {buckets, updated},
     {buckets, removed, timeout},
-    {buckets, removed, maxlife}
+    {buckets, removed, maxlife},
+    {buckets, removed, maxitems}
     ],
   Reply = {stats, [get_kv(Table, Key) || Key <- KeyList]},
   ets:delete_all_objects(Table),
@@ -114,6 +115,8 @@ get_kv(Store, Key) ->
     []       -> {Key, 0}
   end.
 
+% output loop - show statistical data on STDOUT
+
 init_loop() ->
   spawn(fun() -> output_loop() end).
 
@@ -124,24 +127,25 @@ output_loop() ->
   after 1000 ->
     {stats, CurrentResult} = show(),
     [
-      {packets, Packets},
-      {payload, Payload},
-      {{buckets, processed}, BucketsProcessed},
-      {{buckets, created}, BucketsCreated},
-      {{buckets, updated}, BucketsUpdated},
-      {{buckets, removed, timeout}, BucketsRemovedByTimeout},
-      {{buckets, removed, maxlife}, BucketsRemovedByMaxLife}
+      {  packets, Packets},
+      {  payload, Payload},
+      {{ buckets, processed }, BucketsProcessed},
+      {{ buckets, created }, BucketsCreated},
+      {{ buckets, updated }, BucketsUpdated},
+      {{ buckets, removed, timeout }, BucketsRemovedByTimeout},
+      {{ buckets, removed, maxlife }, BucketsRemovedByMaxLife},
+      {{ buckets, removed, maxitems }, BucketsRemovedByMaxItems}
     ] = CurrentResult,
-    BucketsRemovedSum = BucketsRemovedByTimeout + BucketsRemovedByMaxLife,
+    BucketsRemovedSum = BucketsRemovedByTimeout + BucketsRemovedByMaxLife + BucketsRemovedByMaxItems,
     Processes = length(erlang:processes()),
-    io:format("=== | Buckets IN      ~7B/s, CREATED ~7B/s | Packets           ~9B/s~n",
-      [BucketsProcessed, BucketsCreated, Packets]),
-    io:format("    | Buckets UPDATED ~7B/s                    | PayloadThroughput ~13.3f MiB/s (~5.3f Mbit/s)~n",
-      [BucketsUpdated, (Payload/(8*1024*1024)), (Payload/(1000*1000))]),
-    io:format("    | Buckets DIED    ~7B/s, C/D     ~7B/s | Processes         ~9B~n",
+    io:format("=== | Buckets IN      ~7B/s                    | Packets           ~9B/s~n",
+      [BucketsProcessed, Packets]),
+    io:format("    | Buckets CREATED ~7B/s, UPDATED ~7B/s | PayloadThroughput ~13.3f MiB/s (~7.3f Mbit/s)~n",
+      [BucketsCreated, BucketsUpdated, (Payload/(8*1024*1024)), (Payload/(1000*1000))]),
+    io:format("    | Buckets DIED    ~7B/s, +/-     ~7B/s | Processes         ~9B~n",
       [BucketsRemovedSum, (BucketsCreated-BucketsRemovedSum), Processes]),
     io:format("    | Buckets died by TIMEOUT: ~7B/s, MAXLIFE: ~7B/s, MAXSIZE: ~7B/s~n",
-      [BucketsRemovedByTimeout, BucketsRemovedByMaxLife, (0-1)]),
+      [BucketsRemovedByTimeout, BucketsRemovedByMaxLife, BucketsRemovedByMaxItems]),
     io:format("~n"), % empty line
     output_loop()
   end.
