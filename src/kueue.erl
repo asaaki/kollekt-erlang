@@ -5,6 +5,7 @@
 
 -module(kueue).
 -behaviour(gen_server).
+-include("kollekt.hrl").
 
 -export([
   start/1, stop/0, push/1,
@@ -12,10 +13,6 @@
   terminate/2, code_change/3
   ]).
 
--define(DEFAULT_BUCKET_LIST_DELIMITER, <<"|||">>).
--define(DEFAULT_BUCKET_DATA_DELIMITER, <<";">>).
-
--record(state, {}).
 
 start(_Args) ->
   gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
@@ -25,7 +22,6 @@ stop() -> gen_server:call(?MODULE, stop).
 push(Bin) -> gen_server:call(?MODULE, {do, Bin}).
 
 init([]) ->
-  io:format("queue started.~n"),
   {ok, #state{}}.
 
 handle_call({do, Bin}, _From, State) ->

@@ -1,13 +1,8 @@
-
+% kollekt supervisor
 -module(kollekt_sup).
-
 -behaviour(supervisor).
-
+-include("kollekt.hrl").
 -export([start_link/0, init/1]).
-
-%% Helper macro for declaring children of supervisor
--define(CHILD(I, Type), {I, {I, start, []}, permanent, 5000, Type, [I]}).
--define(CHILD_W_ARGS(I, Type, Args), {I, {I, start, Args}, permanent, 5000, Type, [I]}).
 
 start_link() ->
   ChildSpecs =  [

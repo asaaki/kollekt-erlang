@@ -1,23 +1,11 @@
 % UDP server
 %
 % needs:   bucket_broker.erl
-% used_by: -
+% used_by: bucket_broker.erl
 
 -module(bucket).
 -export([new/1, new/2]).
-
--export([checkAge/2, currentTime/0]).
-
--define(DEFAULT_TIMEOUT,    60).
--define(DEFAULT_MAXLIFE,   120). % only in seconds!
--define(DEFAULT_MAXITEMS, 1024).
-
--record(bucket_opts,
-  {
-    timeout=(?DEFAULT_TIMEOUT*1000),
-    maxlife=?DEFAULT_MAXLIFE,
-    maxitems=?DEFAULT_MAXITEMS
-  }).
+-include("kollekt.hrl").
 
 new(BucketId) ->
   Opts = #bucket_opts{},
@@ -69,6 +57,9 @@ loop(BucketId, BucketStore, StartedAt, Opts) ->
     end,
     bucket_broker:remove(BucketId, Reason)
   end.
+
+
+% helper
 
 checkAge(StartedAt, MaxLife) ->
   CurrentTime = currentTime(),

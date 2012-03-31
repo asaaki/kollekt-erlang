@@ -1,0 +1,6 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+%%! +K true +P 1048576 -noshell -noinput -pa ./ebin -smp enable -sname compile
+main([]) ->
+  systools:make_script("kollekt", [local]),
+  os:cmd("./rebar compile").

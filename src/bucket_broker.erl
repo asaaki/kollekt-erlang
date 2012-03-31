@@ -4,8 +4,8 @@
 % used_by: queue.erl
 
 -module(bucket_broker).
-
 -behaviour(gen_server).
+-include("kollekt.hrl").
 
 -export([
   start/1, stop/0,
@@ -14,6 +14,7 @@
   handle_call/3, handle_cast/2, handle_info/2,
   terminate/2, code_change/3
   ]).
+
 
 start(_Args) ->
   gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
@@ -33,11 +34,9 @@ remove(BucketId, Reason) ->
 
 
 init([]) ->
-  io:format("bucket_broker started.~n"),
   {ok, ets:new(?MODULE,[set])}.
 
 
-% handler
 handle_call({search, BucketId}, _From, Table) ->
   Reply = ets:lookup(Table, BucketId),
   {reply, Reply, Table};
@@ -79,51 +78,8 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
   {ok, State}.
 
-%%--------------------------------------------------------------------
-%%% Internal functions
-%%--------------------------------------------------------------------
+
+% helper
+
 call_bucket(Pid, Data) ->
   Pid ! {data, Data}.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% OLD
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% loop(BucketPidStore, StatsPid) ->
-%   receive
-
-%     {lookup, BucketId, Data} ->
-%       Lookup = ets:lookup(BucketPidStore, BucketId),
-%       case Lookup of
-%         [{_BucketId, BucketPid}] ->
-%           self() ! {update, BucketPid, Data};
-%         [] ->
-%           self() ! {create, BucketId, Data}
-%       end,
-%       StatsPid ! { buckets, count, ets:info(BucketPidStore, size)},
-%       loop(BucketPidStore, StatsPid);
-
-%     {create, BucketId, Data} ->
-%       BucketPid = bucket:new(BucketId, self(), StatsPid),
-%       ets:insert(BucketPidStore, {BucketId, BucketPid}),
-%       call_bucket(BucketPid, Data),
-%       StatsPid ! { buckets, create, 1},
-%       loop(BucketPidStore, StatsPid);
-
-%     {update, BucketPid, Data} ->
-%       call_bucket(BucketPid, Data),
-%       StatsPid ! { buckets, update, 1},
-%       loop(BucketPidStore, StatsPid);
-
-%     {remove, BucketId} ->
-%       ets:delete(BucketPidStore, BucketId),
-%       StatsPid ! { buckets, remove, 1},
-%       StatsPid ! { buckets, count, ets:info(BucketPidStore, size)},
-%       loop(BucketPidStore, StatsPid)
-
-%   % update buckets count also if no new incoming
-%   after 500 ->
-%     StatsPid ! { buckets, count, ets:info(BucketPidStore, size)},
-%     loop(BucketPidStore, StatsPid)
-
-%   end.

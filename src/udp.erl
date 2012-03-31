@@ -1,14 +1,14 @@
 % UDP server
 %
 % needs:   queue.erl, stats.erl
-% used_by: -
+% used_by: kollekt_app.erl
 
 -module(udp).
+-include("kollekt.hrl").
 -export([start/1]).
 
 start(Port) ->
   {ok, Socket} = gen_udp:open(Port, [binary]),
-  %io:format("UDP server started on socket ~p~n",[Socket]),
   loop(Socket).
 
 loop(Socket) ->

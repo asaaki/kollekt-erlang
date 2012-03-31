@@ -1,10 +1,8 @@
 -module(kollekt_app).
-
 -behaviour(application).
-
+-include("kollekt.hrl").
 -export([start/2, stop/1]).
 
--define(DEFAULT_PORT, 2323).
 
 start(_StartType, _StartArgs) ->
   stats:start([]),
@@ -17,6 +15,9 @@ start(_StartType, _StartArgs) ->
 
 stop(_State) ->
   ok.
+
+
+% for non-supervised usage
 
 app_init() ->
   Pid = spawn(fun() -> app_loop() end),
