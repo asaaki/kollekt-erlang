@@ -12,7 +12,23 @@ Using Erlang to reduce the packet drops as much as possible (because Erlang has 
 
 Building a distributed collector app, so the overlying production app servers do not need to communicate to one single collect service. And the distributed system will give fault-tolerance by sharing collected data across the node cluster.
 
-##
+## Bucket data
+
+Can be send as following:
+
+```
+mybucket;mybucketdata
+```
+
+or as concatenated list:
+
+```
+bucket1;valueA|||bucket2;valueB|||...
+```
+
+Delimiters can be changed in `src/kollekt.hrl`.
+
+**Take care, which delimiters you want to use, they must not occur in the bucket or value data!**
 
 ## Usage
 
