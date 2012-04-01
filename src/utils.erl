@@ -1,8 +1,10 @@
 -module(utils).
+-include("kollekt.hrl").
 -export([
   for/2,
   upsert_list/3, set_v/3,
-  int_set_v/3, int_get_v/2, int_get_kv/2
+  int_set_v/3, int_get_v/2, int_get_kv/2,
+  random_str/2
   ]).
 
 % for loop - needs a fun/1 (gets loop counter value)!
@@ -57,3 +59,17 @@ int_get_kv(Store, Key) ->
     [{K, V}] -> {K,   V};
     []       -> {Key, 0}
   end.
+
+% random strings
+random_str(Len, Chars) ->
+  random:seed(now()),
+  random_str(Len, Chars, random:seed(now())).
+
+random_str(0,  _Chars, _State) -> [];
+random_str(Len, Chars,  State) ->
+  {Char, NewState} = random_char(Chars, State),
+  [Char|random_str(Len-1, Chars, NewState)].
+
+random_char(Chars, State) ->
+  {Select, NewState} = random:uniform_s(tuple_size(Chars), State),
+  {element(Select, Chars), NewState}.

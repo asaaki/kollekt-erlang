@@ -45,3 +45,11 @@
   {buckets, removed, maxlife},
   {buckets, removed, maxitems}
   ]).
+
+% test emitter
+
+% ALLOWED CHARS
+-define(TEST_ALLOWED_SESSION_CHARS,
+  list_to_tuple("0123456789abcdef")).
+-define(TEST_ALLOWED_CHARS,
+  list_to_tuple("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789")).

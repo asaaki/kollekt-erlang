@@ -7,6 +7,7 @@
 start_link() ->
   ChildSpecs =  [
     ?CHILD(stats, worker),
+    ?CHILD(collector, worker),
     ?CHILD(kueue, worker),
     ?CHILD(bucket_broker, worker),
     ?CHILD_W_ARGS(udp, worker, [2323])

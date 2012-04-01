@@ -19,20 +19,17 @@ init(Host, Port) ->
   end,
   {ok, Socket} = gen_udp:open(0, [binary]),
   io:format("Test Emitter started. Target: ~p:~p~n" ,[UseHost, UsePort]),
-  % we spawn 9 emitter processes
-  utils:for(9, fun(_N)-> spawner(Socket, UseHost, UsePort) end),
+  % we spawn multiple emitter processes
+  utils:for(3, fun(_N)-> spawner(Socket, UseHost, UsePort) end),
   init_loop().
 
 init_loop() -> init_loop().
 
 loop(Socket, Host, Port) ->
 
-  {A1,A2,A3} = now(),
-  random:seed(A1, A2, A3),
-  SessionSize = 1000000, % max amount of different sessions
-  ValueSize   = 10000,   % max amount of different values
-  Session = crypto:md5(list_to_binary(integer_to_list(random:uniform(SessionSize)+1))),
-  Value   = crypto:md5(list_to_binary(integer_to_list(random:uniform(ValueSize)+1))),
+  {A1,A2,A3} = now(), random:seed(A1, A2, A3),
+  Session = utils:random_str(7, ?TEST_ALLOWED_SESSION_CHARS),
+  Value   = utils:random_str(23, ?TEST_ALLOWED_CHARS),
 
   DataList = [Session,?DEFAULT_BUCKET_DATA_DELIMITER,Value],
   BinData = list_to_binary(DataList),

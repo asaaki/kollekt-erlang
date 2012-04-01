@@ -6,6 +6,7 @@
 
 start(_StartType, _StartArgs) ->
   stats:start([]),
+  collector:start([]),
   kueue:start([]),
   bucket_broker:start([]),
   spawn(fun() -> udp:start(?DEFAULT_PORT) end),

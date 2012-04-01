@@ -29,10 +29,13 @@ loop(BucketId, BucketStore, StartedAt, Opts) ->
       OverSized = length(NewBucketStore) >= Opts#bucket_opts.maxitems,
       case {OverAged, OverSized} of
         {true, false} ->
+          collector:add(BucketId, NewBucketStore),
           bucket_broker:remove(BucketId, maxlife);
         {false, true} ->
+          collector:add(BucketId, NewBucketStore),
           bucket_broker:remove(BucketId, maxitems);
         {true, true} ->
+          collector:add(BucketId, NewBucketStore),
           bucket_broker:remove(BucketId, maxitems); % we take the maxitems as first prio reason
         {_,_} ->
           loop(BucketId, NewBucketStore, StartedAt, Opts)
@@ -55,6 +58,7 @@ loop(BucketId, BucketStore, StartedAt, Opts) ->
       true ->
         timeout
     end,
+    collector:add(BucketId, BucketStore),
     bucket_broker:remove(BucketId, Reason)
   end.
 
