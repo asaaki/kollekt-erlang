@@ -35,3 +35,13 @@
 % stats
 
 -define(STATS_SHOW_TIMER, 2). % seconds
+-define(STATS_KEY_LIST,[
+  packets,
+  payload,
+  {buckets, processed},
+  {buckets, created},
+  {buckets, updated},
+  {buckets, removed, timeout},
+  {buckets, removed, maxlife},
+  {buckets, removed, maxitems}
+  ]).

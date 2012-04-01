@@ -34,7 +34,7 @@ loop(Socket, Host, Port) ->
   Session = crypto:md5(list_to_binary(integer_to_list(random:uniform(SessionSize)+1))),
   Value   = crypto:md5(list_to_binary(integer_to_list(random:uniform(ValueSize)+1))),
 
-  DataList = [Session,<<";">>,Value],
+  DataList = [Session,?DEFAULT_BUCKET_DATA_DELIMITER,Value],
   BinData = list_to_binary(DataList),
   client(Socket, Host, Port, BinData),
   loop(Socket, Host, Port).

@@ -1,20 +1,59 @@
 -module(utils).
--export([for/2]).
+-export([
+  for/2,
+  upsert_list/3, set_v/3,
+  int_set_v/3, int_get_v/2, int_get_kv/2
+  ]).
 
+% for loop - needs a fun/1 (gets loop counter value)!
+% example:
+%   utils:for(3, fun(N)-> ...do something... end)
 %
-% for-loop emulation
-%
-% N:     Number of times Fun should be called
-% Fun: The high-level function to be called.
-%          This function is expected to accept a single integer (the loop count)
+% if counter not needed in function:
+%   utils:for(5, fun(_)-> ...do something... end)
 %
 for(N, Fun) when is_integer(N), is_function(Fun, 1) ->
-  for({N, 0}, Fun)
-;
+  for({N, 0}, Fun);
 for({N, _}, _) when is_integer(N), N < 1 ->
-  ok
-;
+  ok;
 for({N, LoopCount}, Fun) when is_integer(N), is_function(Fun, 1) ->
   Fun(LoopCount),
-  for({N-1, LoopCount+1}, Fun)
-.
+  for({N-1, LoopCount+1}, Fun).
+
+% ETS integer helper
+
+% updates or inserts list based Key-Value
+upsert_list(Store, Key, Value) ->
+  case ets:lookup(Store, Key) of
+    [{Key, OldValue}] ->
+      NewValue = [Value|OldValue],
+      ets:insert(Store, { Key, NewValue });
+    [] ->
+      ets:insert(Store, { Key, Value })
+  end.
+
+% set a Key-Value pair
+set_v(Store, Key, Value) ->
+  ets:insert(Store, { Key, Value }).
+
+% INTEGER setters and getters (values MUST be integers only)
+
+% set a Key-Value pair
+int_set_v(Store, Key, Value) when is_integer(Value) ->
+  ets:insert(Store, { Key, Value }).
+
+% returns Value
+% default 0
+int_get_v(Store, Key) ->
+  case ets:lookup(Store, Key) of
+    [{_Key, Value}] -> Value;
+    []              -> 0
+  end.
+
+% returns {Key, Value}
+% default {Key, 0}
+int_get_kv(Store, Key) ->
+  case ets:lookup(Store, Key) of
+    [{K, V}] -> {K,   V};
+    []       -> {Key, 0}
+  end.

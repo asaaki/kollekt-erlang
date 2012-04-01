@@ -20,6 +20,12 @@ start(_Args) ->
 
 stop() -> gen_server:call(?MODULE, stop).
 
+init(_Args) ->
+  Table = ets:new(?MODULE,[set]),
+  reset_table(Table),
+  init_output_loop(),
+  {ok, Table}.
+
 % insert() -> ok.
 % upsert() -> ok.
 
@@ -33,38 +39,24 @@ set(Key, Value) ->
 show() ->
   gen_server:call(?MODULE, result).
 
-init(_Args) ->
-  init_output_loop(),
-  {ok, ets:new(?MODULE,[set])}.
-
 handle_call({incr_value, Key}, _From, Table) ->
-  increment(Table, Key),
+  ets:update_counter(Table, Key, 1),
   Reply = ok,
   {reply, Reply, Table};
 
 handle_call({add_value, Key, Value}, _From, Table) ->
-  plus_v(Table, Key, Value),
+  ets:update_counter(Table, Key, Value),
   Reply = ok,
   {reply, Reply, Table};
 
 handle_call({set_value, Key, Value}, _From, Table) ->
-  set_v(Table, Key, Value),
+  utils:int_set_v(Table, Key, Value),
   Reply = ok,
   {reply, Reply, Table};
 
 handle_call(result, _From, Table) ->
-  KeyList = [
-    packets,
-    payload,
-    {buckets, processed},
-    {buckets, created},
-    {buckets, updated},
-    {buckets, removed, timeout},
-    {buckets, removed, maxlife},
-    {buckets, removed, maxitems}
-    ],
-  Reply = {stats, [get_kv(Table, Key) || Key <- KeyList]},
-  ets:delete_all_objects(Table),
+  Reply = {stats, [utils:int_get_kv(Table, Key) || Key <- ?STATS_KEY_LIST]},
+  reset_table(Table),
   {reply, Reply, Table};
 
 handle_call(_Request, _From, Table) ->
@@ -83,38 +75,10 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
   {ok, State}.
 
-
 % helper
 
-increment(Store, Key) ->
-  plus_v(Store, Key, 1).
-
-% decrement(Store, Key) ->
-%   minus_v(Store, Key, 1).
-
-set_v(Store, Key, Value) ->
-  ets:insert(Store, { Key, Value }).
-
-plus_v(Store, Key, Value) ->
-  New = get_v(Store, Key) + Value,
-  ets:insert(Store, { Key, New }).
-
-% minus_v(Store, Key, Value) ->
-%   New = get_v(Store, Key) - Value,
-%   ets:insert(Store, { Key, New }).
-
-get_v(Store, Key) ->
-  case ets:lookup(Store, Key) of
-    [{_Key, Value}] -> Value;
-    []              -> 0
-  end.
-
-get_kv(Store, Key) ->
-  case ets:lookup(Store, Key) of
-    [{K, V}] -> {K,   V};
-    []       -> {Key, 0}
-  end.
-
+reset_table(Table) ->
+  [ets:insert(Table, {Key, 0}) || Key <- ?STATS_KEY_LIST].
 
 % output loop - show statistical data on STDOUT
 
